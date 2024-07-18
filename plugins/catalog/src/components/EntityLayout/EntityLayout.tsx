@@ -72,10 +72,11 @@ attachComponentData(Route, dataKey, true);
 attachComponentData(Route, 'core.gatherMountPoints', true); // This causes all mount points that are discovered within this route to use the path of the route itself
 
 function EntityLayoutTitle(props: {
+  UNSTABLE_extraTitleContent?: React.ReactNode;
   title: string;
   entity: Entity | undefined;
 }) {
-  const { entity, title } = props;
+  const { UNSTABLE_extraTitleContent, entity, title } = props;
   return (
     <Box display="inline-flex" alignItems="center" height="1em" maxWidth="100%">
       <Box
@@ -86,6 +87,7 @@ function EntityLayoutTitle(props: {
       >
         {entity ? <EntityDisplayName entityRef={entity} hideIcon /> : title}
       </Box>
+      {UNSTABLE_extraTitleContent}
       {entity && <FavoriteEntity entity={entity} />}
     </Box>
   );
@@ -116,12 +118,30 @@ function headerProps(
   };
 }
 
-function EntityLabels(props: { entity: Entity }) {
-  const { entity } = props;
+// NOTE(deverant): Intentionally not exported at this point, since it's part of
+// the unstable extra labels concept below
+// This is a copy of the HeaderLabelProps from the core-components package
+// which is not exported either.
+interface HeaderLabelProps {
+  label: string;
+  value?: React.ReactNode;
+  contentTypograpyRootComponent?: keyof JSX.IntrinsicElements;
+  url?: string;
+}
+
+function EntityLabels(props: {
+  UNSTABLE_extraLabels?: HeaderLabelProps[];
+  entity: Entity;
+}) {
+  const { UNSTABLE_extraLabels, entity } = props;
   const ownedByRelations = getEntityRelations(entity, RELATION_OWNED_BY);
   const { t } = useTranslationRef(catalogTranslationRef);
   return (
     <>
+      {UNSTABLE_extraLabels &&
+        UNSTABLE_extraLabels.map(labelProps => (
+          <HeaderLabel key={labelProps.label} {...labelProps} />
+        ))}
       {ownedByRelations.length > 0 && (
         <HeaderLabel
           label={t('entityLabels.ownerLabel')}
@@ -165,6 +185,9 @@ interface EntityContextMenuOptions {
 export interface EntityLayoutProps {
   UNSTABLE_extraContextMenuItems?: ExtraContextMenuItem[];
   UNSTABLE_contextMenuOptions?: EntityContextMenuOptions;
+  UNSTABLE_extraTitleContent?: React.ReactNode;
+  UNSTABLE_extraLabels?: HeaderLabelProps[];
+  UNSTABLE_subtitle?: React.ReactNode;
   children?: React.ReactNode;
   NotFoundComponent?: React.ReactNode;
 }
@@ -190,6 +213,9 @@ export const EntityLayout = (props: EntityLayoutProps) => {
   const {
     UNSTABLE_extraContextMenuItems,
     UNSTABLE_contextMenuOptions,
+    UNSTABLE_extraTitleContent,
+    UNSTABLE_extraLabels,
+    UNSTABLE_subtitle,
     children,
     NotFoundComponent,
   } = props;
@@ -258,13 +284,23 @@ export const EntityLayout = (props: EntityLayoutProps) => {
   return (
     <Page themeId={entity?.spec?.type?.toString() ?? 'home'}>
       <Header
-        title={<EntityLayoutTitle title={headerTitle} entity={entity!} />}
+        title={
+          <EntityLayoutTitle
+            UNSTABLE_extraTitleContent={UNSTABLE_extraTitleContent}
+            title={headerTitle}
+            entity={entity!}
+          />
+        }
         pageTitleOverride={headerTitle}
         type={headerType}
+        subtitle={UNSTABLE_subtitle}
       >
         {entity && (
           <>
-            <EntityLabels entity={entity} />
+            <EntityLabels
+              UNSTABLE_extraLabels={UNSTABLE_extraLabels}
+              entity={entity}
+            />
             <EntityContextMenu
               UNSTABLE_extraContextMenuItems={UNSTABLE_extraContextMenuItems}
               UNSTABLE_contextMenuOptions={UNSTABLE_contextMenuOptions}
