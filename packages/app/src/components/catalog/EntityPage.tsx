@@ -70,7 +70,7 @@ import {
   EntityOwnershipCard,
   EntityUserProfileCard,
 } from '@backstage/plugin-org';
-import { Button, Grid } from '@material-ui/core';
+import { Button, Chip, Grid } from '@material-ui/core';
 import React, { ReactNode } from 'react';
 import { TechDocsAddons } from '@backstage/plugin-techdocs-react';
 import {
@@ -79,6 +79,7 @@ import {
   LightBox,
 } from '@backstage/plugin-techdocs-module-addons-contrib';
 import { EntityTechdocsContent } from '@backstage/plugin-techdocs';
+import FileCopyIcon from '@material-ui/icons/FileCopy';
 
 const customEntityFilterKind = ['Component', 'API', 'System'];
 
@@ -89,6 +90,13 @@ const EntityLayoutWrapper = (props: { children?: ReactNode }) => {
         UNSTABLE_contextMenuOptions={{
           disableUnregister: 'visible',
         }}
+        UNSTABLE_extraTitleContent={
+          <Button>
+            <FileCopyIcon />
+          </Button>
+        }
+        UNSTABLE_subtitle={<Chip size="small" label="View workflows" />}
+        UNSTABLE_extraLabels={[{ label: 'Tier', value: 'High' }]}
       >
         {props.children}
       </EntityLayout>
