@@ -14,5 +14,14 @@
  * limitations under the License.
  */
 
-export { EntityLayout } from './EntityLayout';
-export type { EntityLayoutProps, EntityLayoutRouteProps } from './EntityLayout';
+export {
+  EntityContext,
+  EntityLayout,
+  EntityLayoutTitle,
+  EntityLabels,
+} from './EntityLayout';
+export type {
+  EntityContextData,
+  EntityLayoutProps,
+  EntityLayoutRouteProps,
+} from './EntityLayout';
