@@ -49,12 +49,27 @@ import {
 import Box from '@material-ui/core/Box';
 import { TabProps } from '@material-ui/core/Tab';
 import Alert from '@material-ui/lab/Alert';
-import React, { useEffect, useState } from 'react';
+import React, { Dispatch, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { EntityContextMenu } from '../EntityContextMenu/EntityContextMenu';
 import { rootRouteRef, unregisterRedirectRouteRef } from '../../routes';
 import { catalogTranslationRef } from '../../translation';
 import { useTranslationRef } from '@backstage/core-plugin-api/alpha';
+
+export interface EntityContextData {
+  entity?: Entity;
+  headerTitle: string;
+  headerType: string;
+  setConfirmationDialogOpen: Dispatch<React.SetStateAction<boolean>>;
+  setInspectionDialogOpen: Dispatch<React.SetStateAction<boolean>>;
+}
+
+export const EntityContext = React.createContext<EntityContextData>({
+  headerTitle: '',
+  headerType: '',
+  setConfirmationDialogOpen: () => {},
+  setInspectionDialogOpen: () => {},
+});
 
 /** @public */
 export type EntityLayoutRouteProps = {
@@ -71,7 +86,7 @@ const Route: (props: EntityLayoutRouteProps) => null = () => null;
 attachComponentData(Route, dataKey, true);
 attachComponentData(Route, 'core.gatherMountPoints', true); // This causes all mount points that are discovered within this route to use the path of the route itself
 
-function EntityLayoutTitle(props: {
+export function EntityLayoutTitle(props: {
   title: string;
   entity: Entity | undefined;
 }) {
@@ -116,7 +131,7 @@ function headerProps(
   };
 }
 
-function EntityLabels(props: { entity: Entity }) {
+export function EntityLabels(props: { entity: Entity }) {
   const { entity } = props;
   const ownedByRelations = getEntityRelations(entity, RELATION_OWNED_BY);
   const { t } = useTranslationRef(catalogTranslationRef);
@@ -167,6 +182,7 @@ export interface EntityLayoutProps {
   UNSTABLE_contextMenuOptions?: EntityContextMenuOptions;
   children?: React.ReactNode;
   NotFoundComponent?: React.ReactNode;
+  header?: JSX.Element;
 }
 
 /**
@@ -192,6 +208,7 @@ export const EntityLayout = (props: EntityLayoutProps) => {
     UNSTABLE_contextMenuOptions,
     children,
     NotFoundComponent,
+    header,
   } = props;
   const { kind, namespace, name } = useRouteRefParams(entityRouteRef);
   const { entity, loading, error } = useAsyncEntity();
@@ -257,61 +274,70 @@ export const EntityLayout = (props: EntityLayoutProps) => {
 
   return (
     <Page themeId={entity?.spec?.type?.toString() ?? 'home'}>
-      <Header
-        title={<EntityLayoutTitle title={headerTitle} entity={entity!} />}
-        pageTitleOverride={headerTitle}
-        type={headerType}
+      <EntityContext.Provider
+        value={{
+          entity,
+          headerTitle,
+          headerType,
+          setConfirmationDialogOpen,
+          setInspectionDialogOpen,
+        }}
       >
-        {entity && (
-          <>
-            <EntityLabels entity={entity} />
-            <EntityContextMenu
-              UNSTABLE_extraContextMenuItems={UNSTABLE_extraContextMenuItems}
-              UNSTABLE_contextMenuOptions={UNSTABLE_contextMenuOptions}
-              onUnregisterEntity={() => setConfirmationDialogOpen(true)}
-              onInspectEntity={() => setInspectionDialogOpen(true)}
-            />
-          </>
+        {header || (
+          <Header
+            title={<EntityLayoutTitle title={headerTitle} entity={entity!} />}
+            pageTitleOverride={headerTitle}
+            type={headerType}
+          >
+            {entity && (
+              <>
+                <EntityLabels entity={entity} />
+                <EntityContextMenu
+                  UNSTABLE_extraContextMenuItems={
+                    UNSTABLE_extraContextMenuItems
+                  }
+                  UNSTABLE_contextMenuOptions={UNSTABLE_contextMenuOptions}
+                  onUnregisterEntity={() => setConfirmationDialogOpen(true)}
+                  onInspectEntity={() => setInspectionDialogOpen(true)}
+                />
+              </>
+            )}
+          </Header>
         )}
-      </Header>
-
-      {loading && <Progress />}
-
-      {entity && <RoutedTabs routes={routes} />}
-
-      {error && (
-        <Content>
-          <Alert severity="error">{error.toString()}</Alert>
-        </Content>
-      )}
-
-      {!loading && !error && !entity && (
-        <Content>
-          {NotFoundComponent ? (
-            NotFoundComponent
-          ) : (
-            <WarningPanel title={t('entityLabels.warningPanelTitle')}>
-              There is no {kind} with the requested{' '}
-              <Link to="https://backstage.io/docs/features/software-catalog/references">
-                kind, namespace, and name
-              </Link>
-              .
-            </WarningPanel>
-          )}
-        </Content>
-      )}
-
-      <UnregisterEntityDialog
-        open={confirmationDialogOpen}
-        entity={entity!}
-        onConfirm={cleanUpAfterRemoval}
-        onClose={() => setConfirmationDialogOpen(false)}
-      />
-      <InspectEntityDialog
-        open={inspectionDialogOpen}
-        entity={entity!}
-        onClose={() => setInspectionDialogOpen(false)}
-      />
+        {loading && <Progress />}
+        {entity && <RoutedTabs routes={routes} />}
+        {error && (
+          <Content>
+            <Alert severity="error">{error.toString()}</Alert>
+          </Content>
+        )}
+        {!loading && !error && !entity && (
+          <Content>
+            {NotFoundComponent ? (
+              NotFoundComponent
+            ) : (
+              <WarningPanel title={t('entityLabels.warningPanelTitle')}>
+                There is no {kind} with the requested{' '}
+                <Link to="https://backstage.io/docs/features/software-catalog/references">
+                  kind, namespace, and name
+                </Link>
+                .
+              </WarningPanel>
+            )}
+          </Content>
+        )}
+        <UnregisterEntityDialog
+          open={confirmationDialogOpen}
+          entity={entity!}
+          onConfirm={cleanUpAfterRemoval}
+          onClose={() => setConfirmationDialogOpen(false)}
+        />
+        <InspectEntityDialog
+          open={inspectionDialogOpen}
+          entity={entity!}
+          onClose={() => setInspectionDialogOpen(false)}
+        />
+      </EntityContext.Provider>
     </Page>
   );
 };

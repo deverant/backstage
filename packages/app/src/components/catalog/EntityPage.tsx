@@ -24,7 +24,7 @@ import {
   RELATION_PART_OF,
   RELATION_PROVIDES_API,
 } from '@backstage/catalog-model';
-import { EmptyState } from '@backstage/core-components';
+import { EmptyState, Header, HeaderLabel } from '@backstage/core-components';
 import {
   EntityApiDefinitionCard,
   EntityConsumedApisCard,
@@ -54,6 +54,11 @@ import {
   hasLabels,
   hasRelationWarnings,
   EntityRelationWarning,
+  EntityLabels,
+  EntityLayoutTitle,
+  EntityContextMenu,
+  EntityContext,
+  EntityContextData,
 } from '@backstage/plugin-catalog';
 import {
   Direction,
@@ -70,8 +75,8 @@ import {
   EntityOwnershipCard,
   EntityUserProfileCard,
 } from '@backstage/plugin-org';
-import { Button, Grid } from '@material-ui/core';
-import React, { ReactNode } from 'react';
+import { Button, Chip, Grid } from '@material-ui/core';
+import React, { ReactNode, useContext } from 'react';
 import { TechDocsAddons } from '@backstage/plugin-techdocs-react';
 import {
   TextSize,
@@ -82,6 +87,36 @@ import { EntityTechdocsContent } from '@backstage/plugin-techdocs';
 
 const customEntityFilterKind = ['Component', 'API', 'System'];
 
+const EntityHeader = () => {
+  const {
+    entity,
+    headerTitle,
+    headerType,
+    setConfirmationDialogOpen,
+    setInspectionDialogOpen,
+  } = useContext<EntityContextData>(EntityContext);
+
+  return (
+    <Header
+      title={<EntityLayoutTitle title={headerTitle} entity={entity!} />}
+      pageTitleOverride={headerTitle}
+      type={headerType}
+      subtitle={<Chip size="small" label="View workflows" />}
+    >
+      {entity && (
+        <>
+          <HeaderLabel label="Tier" value="High" />
+          <EntityLabels entity={entity} />
+          <EntityContextMenu
+            onUnregisterEntity={() => setConfirmationDialogOpen(true)}
+            onInspectEntity={() => setInspectionDialogOpen(true)}
+          />
+        </>
+      )}
+    </Header>
+  );
+};
+
 const EntityLayoutWrapper = (props: { children?: ReactNode }) => {
   return (
     <>
@@ -89,6 +124,7 @@ const EntityLayoutWrapper = (props: { children?: ReactNode }) => {
         UNSTABLE_contextMenuOptions={{
           disableUnregister: 'visible',
         }}
+        header={<EntityHeader />}
       >
         {props.children}
       </EntityLayout>
