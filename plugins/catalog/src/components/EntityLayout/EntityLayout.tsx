@@ -57,16 +57,11 @@ import { catalogTranslationRef } from '../../translation';
 import { useTranslationRef } from '@backstage/core-plugin-api/alpha';
 
 export interface EntityContextData {
-  entity?: Entity;
-  headerTitle: string;
-  headerType: string;
   setConfirmationDialogOpen: Dispatch<React.SetStateAction<boolean>>;
   setInspectionDialogOpen: Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const EntityContext = React.createContext<EntityContextData>({
-  headerTitle: '',
-  headerType: '',
   setConfirmationDialogOpen: () => {},
   setInspectionDialogOpen: () => {},
 });
@@ -106,7 +101,7 @@ export function EntityLayoutTitle(props: {
   );
 }
 
-function headerProps(
+export function headerProps(
   paramKind: string | undefined,
   paramNamespace: string | undefined,
   paramName: string | undefined,
@@ -276,9 +271,6 @@ export const EntityLayout = (props: EntityLayoutProps) => {
     <Page themeId={entity?.spec?.type?.toString() ?? 'home'}>
       <EntityContext.Provider
         value={{
-          entity,
-          headerTitle,
-          headerType,
           setConfirmationDialogOpen,
           setInspectionDialogOpen,
         }}

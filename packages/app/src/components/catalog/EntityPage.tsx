@@ -59,6 +59,7 @@ import {
   EntityContextMenu,
   EntityContext,
   EntityContextData,
+  headerProps,
 } from '@backstage/plugin-catalog';
 import {
   Direction,
@@ -84,17 +85,27 @@ import {
   LightBox,
 } from '@backstage/plugin-techdocs-module-addons-contrib';
 import { EntityTechdocsContent } from '@backstage/plugin-techdocs';
+import {
+  entityRouteRef,
+  useAsyncEntity,
+} from '@backstage/plugin-catalog-react';
+import { useRouteRefParams } from '@backstage/core-plugin-api';
 
 const customEntityFilterKind = ['Component', 'API', 'System'];
 
 const EntityHeader = () => {
-  const {
+  const { setConfirmationDialogOpen, setInspectionDialogOpen } =
+    useContext<EntityContextData>(EntityContext);
+
+  const { kind, namespace, name } = useRouteRefParams(entityRouteRef);
+  const { entity } = useAsyncEntity();
+
+  const { headerTitle, headerType } = headerProps(
+    kind,
+    namespace,
+    name,
     entity,
-    headerTitle,
-    headerType,
-    setConfirmationDialogOpen,
-    setInspectionDialogOpen,
-  } = useContext<EntityContextData>(EntityContext);
+  );
 
   return (
     <Header
