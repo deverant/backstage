@@ -33,7 +33,6 @@ import {
   attachComponentData,
   IconComponent,
   useElementFilter,
-  useRouteRef,
   useRouteRefParams,
 } from '@backstage/core-plugin-api';
 import {
@@ -42,17 +41,13 @@ import {
   entityRouteRef,
   FavoriteEntity,
   getEntityRelations,
-  InspectEntityDialog,
-  UnregisterEntityDialog,
   useAsyncEntity,
 } from '@backstage/plugin-catalog-react';
 import Box from '@material-ui/core/Box';
 import { TabProps } from '@material-ui/core/Tab';
 import Alert from '@material-ui/lab/Alert';
-import React, { Dispatch, useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { Dispatch } from 'react';
 import { EntityContextMenu } from '../EntityContextMenu/EntityContextMenu';
-import { rootRouteRef, unregisterRedirectRouteRef } from '../../routes';
 import { catalogTranslationRef } from '../../translation';
 import { useTranslationRef } from '@backstage/core-plugin-api/alpha';
 
@@ -60,11 +55,6 @@ export interface EntityContextData {
   setConfirmationDialogOpen: Dispatch<React.SetStateAction<boolean>>;
   setInspectionDialogOpen: Dispatch<React.SetStateAction<boolean>>;
 }
-
-export const EntityContext = React.createContext<EntityContextData>({
-  setConfirmationDialogOpen: () => {},
-  setInspectionDialogOpen: () => {},
-});
 
 /** @public */
 export type EntityLayoutRouteProps = {
@@ -207,7 +197,6 @@ export const EntityLayout = (props: EntityLayoutProps) => {
   } = props;
   const { kind, namespace, name } = useRouteRefParams(entityRouteRef);
   const { entity, loading, error } = useAsyncEntity();
-  const location = useLocation();
   const routes = useElementFilter(
     children,
     elements =>
@@ -244,92 +233,49 @@ export const EntityLayout = (props: EntityLayoutProps) => {
     entity,
   );
 
-  const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
-  const [inspectionDialogOpen, setInspectionDialogOpen] = useState(false);
-  const navigate = useNavigate();
-  const catalogRoute = useRouteRef(rootRouteRef);
-  const unregisterRedirectRoute = useRouteRef(unregisterRedirectRouteRef);
   const { t } = useTranslationRef(catalogTranslationRef);
-
-  const cleanUpAfterRemoval = async () => {
-    setConfirmationDialogOpen(false);
-    setInspectionDialogOpen(false);
-    navigate(
-      unregisterRedirectRoute ? unregisterRedirectRoute() : catalogRoute(),
-    );
-  };
-
-  // Make sure to close the dialog if the user clicks links in it that navigate
-  // to another entity.
-  useEffect(() => {
-    setConfirmationDialogOpen(false);
-    setInspectionDialogOpen(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
 
   return (
     <Page themeId={entity?.spec?.type?.toString() ?? 'home'}>
-      <EntityContext.Provider
-        value={{
-          setConfirmationDialogOpen,
-          setInspectionDialogOpen,
-        }}
-      >
-        {header || (
-          <Header
-            title={<EntityLayoutTitle title={headerTitle} entity={entity!} />}
-            pageTitleOverride={headerTitle}
-            type={headerType}
-          >
-            {entity && (
-              <>
-                <EntityLabels entity={entity} />
-                <EntityContextMenu
-                  UNSTABLE_extraContextMenuItems={
-                    UNSTABLE_extraContextMenuItems
-                  }
-                  UNSTABLE_contextMenuOptions={UNSTABLE_contextMenuOptions}
-                  onUnregisterEntity={() => setConfirmationDialogOpen(true)}
-                  onInspectEntity={() => setInspectionDialogOpen(true)}
-                />
-              </>
-            )}
-          </Header>
-        )}
-        {loading && <Progress />}
-        {entity && <RoutedTabs routes={routes} />}
-        {error && (
-          <Content>
-            <Alert severity="error">{error.toString()}</Alert>
-          </Content>
-        )}
-        {!loading && !error && !entity && (
-          <Content>
-            {NotFoundComponent ? (
-              NotFoundComponent
-            ) : (
-              <WarningPanel title={t('entityLabels.warningPanelTitle')}>
-                There is no {kind} with the requested{' '}
-                <Link to="https://backstage.io/docs/features/software-catalog/references">
-                  kind, namespace, and name
-                </Link>
-                .
-              </WarningPanel>
-            )}
-          </Content>
-        )}
-        <UnregisterEntityDialog
-          open={confirmationDialogOpen}
-          entity={entity!}
-          onConfirm={cleanUpAfterRemoval}
-          onClose={() => setConfirmationDialogOpen(false)}
-        />
-        <InspectEntityDialog
-          open={inspectionDialogOpen}
-          entity={entity!}
-          onClose={() => setInspectionDialogOpen(false)}
-        />
-      </EntityContext.Provider>
+      {header || (
+        <Header
+          title={<EntityLayoutTitle title={headerTitle} entity={entity!} />}
+          pageTitleOverride={headerTitle}
+          type={headerType}
+        >
+          {entity && (
+            <>
+              <EntityLabels entity={entity} />
+              <EntityContextMenu
+                UNSTABLE_extraContextMenuItems={UNSTABLE_extraContextMenuItems}
+                UNSTABLE_contextMenuOptions={UNSTABLE_contextMenuOptions}
+              />
+            </>
+          )}
+        </Header>
+      )}
+      {loading && <Progress />}
+      {entity && <RoutedTabs routes={routes} />}
+      {error && (
+        <Content>
+          <Alert severity="error">{error.toString()}</Alert>
+        </Content>
+      )}
+      {!loading && !error && !entity && (
+        <Content>
+          {NotFoundComponent ? (
+            NotFoundComponent
+          ) : (
+            <WarningPanel title={t('entityLabels.warningPanelTitle')}>
+              There is no {kind} with the requested{' '}
+              <Link to="https://backstage.io/docs/features/software-catalog/references">
+                kind, namespace, and name
+              </Link>
+              .
+            </WarningPanel>
+          )}
+        </Content>
+      )}
     </Page>
   );
 };

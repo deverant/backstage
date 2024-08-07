@@ -57,8 +57,6 @@ import {
   EntityLabels,
   EntityLayoutTitle,
   EntityContextMenu,
-  EntityContext,
-  EntityContextData,
   headerProps,
 } from '@backstage/plugin-catalog';
 import {
@@ -77,7 +75,7 @@ import {
   EntityUserProfileCard,
 } from '@backstage/plugin-org';
 import { Button, Chip, Grid } from '@material-ui/core';
-import React, { ReactNode, useContext } from 'react';
+import React, { ReactNode } from 'react';
 import { TechDocsAddons } from '@backstage/plugin-techdocs-react';
 import {
   TextSize,
@@ -94,9 +92,6 @@ import { useRouteRefParams } from '@backstage/core-plugin-api';
 const customEntityFilterKind = ['Component', 'API', 'System'];
 
 const EntityHeader = () => {
-  const { setConfirmationDialogOpen, setInspectionDialogOpen } =
-    useContext<EntityContextData>(EntityContext);
-
   const { kind, namespace, name } = useRouteRefParams(entityRouteRef);
   const { entity } = useAsyncEntity();
 
@@ -118,10 +113,7 @@ const EntityHeader = () => {
         <>
           <HeaderLabel label="Tier" value="High" />
           <EntityLabels entity={entity} />
-          <EntityContextMenu
-            onUnregisterEntity={() => setConfirmationDialogOpen(true)}
-            onInspectEntity={() => setInspectionDialogOpen(true)}
-          />
+          <EntityContextMenu />
         </>
       )}
     </Header>

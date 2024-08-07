@@ -16,7 +16,6 @@
 
 export {
   headerProps,
-  EntityContext,
   EntityLayout,
   EntityLayoutTitle,
   EntityLabels,
